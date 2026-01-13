@@ -25,6 +25,7 @@ provisioner:
     defaults:
       interpreter_python: auto_silent
       gathering: smart
+      roles_path: ${MOLECULE_PROJECT_DIRECTORY}/roles
   inventory:
     group_vars:
       all:
