@@ -4,7 +4,7 @@
   gather_facts: false
 
   tasks:
-    - name: Install Python (required for Ansible)
+    - name: Install Python and system utilities (required for Ansible)
       ansible.builtin.raw: |
-        apt-get update && apt-get install -y python3
+        apt-get update && apt-get install -y python3 procps
       changed_when: true
