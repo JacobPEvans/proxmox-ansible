@@ -20,6 +20,9 @@
     - name: Include ulimits role
       ansible.builtin.include_role:
         name: ulimits
+      vars:
+        # Skip systemd reload in containers (no systemd PID 1)
+        ulimits_skip_systemd_reload: true
       tags:
         - ulimits
 
