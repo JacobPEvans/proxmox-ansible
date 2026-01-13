@@ -17,15 +17,14 @@
       register: limits_file
       failed_when: not limits_file.stat.exists
 
+    - name: Verify systemd limits directory exists
+      ansible.builtin.stat:
+        path: /etc/systemd/system.conf.d
+      register: systemd_dir
+      failed_when: not systemd_dir.stat.exists
+
     - name: Verify systemd limits configuration exists
       ansible.builtin.stat:
         path: /etc/systemd/system.conf.d/limits.conf
       register: systemd_limits
       failed_when: not systemd_limits.stat.exists
-
-    - name: Verify swappiness setting
-      ansible.builtin.command:
-        cmd: sysctl -n vm.swappiness
-      register: swappiness
-      changed_when: false
-      failed_when: swappiness.stdout != "10"

@@ -2,20 +2,20 @@
 dependency:
   name: galaxy
   options:
-    requirements-file: requirements.yml
+    requirements-file: ${MOLECULE_PROJECT_DIRECTORY}/requirements.yml
 
 driver:
-  name: default
+  name: docker
 
 platforms:
   - name: proxmox-test
     image: debian:12
     pre_build_image: true
     privileged: true
-    command: /lib/systemd/systemd
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
-    cgroupns_mode: host
+    command: /bin/bash -c "while true; do sleep 1000; done"
+    tmpfs:
+      - /run
+      - /tmp
 
 provisioner:
   name: ansible
@@ -23,16 +23,14 @@ provisioner:
     defaults:
       interpreter_python: auto_silent
       gathering: smart
-      fact_caching: jsonfile
-      fact_caching_connection: /tmp/facts
   inventory:
     group_vars:
       all:
+        ansible_connection: docker
         # Override defaults for testing environment
         zfs_swap_size: "1G"
         common_packages:
           - htop
-          - iotop
 
 verifier:
   name: ansible

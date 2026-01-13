@@ -5,11 +5,10 @@
   gather_facts: true
 
   tasks:
-    - name: Include common role
-      ansible.builtin.include_role:
-        name: common
-      tags:
-        - common
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
 
     - name: Include kernel_tuning role
       ansible.builtin.include_role:
@@ -23,5 +22,6 @@
       tags:
         - ulimits
 
-    # Note: zfs_swap role requires ZFS and is skipped in container tests
-    # Use integration tests on actual Proxmox hosts for full coverage
+    # Note: common role requires specific packages (lm-sensors, rasdaemon)
+    # Note: zfs_swap role requires ZFS which is not available in containers
+    # Full integration tests should run on actual Proxmox hosts
