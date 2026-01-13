@@ -21,3 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Molecule test configuration for role validation
 - Renovate configuration for automated dependency updates
 - Pre-commit hooks configuration
+
+[Unreleased]: https://github.com/JacobPEvans/proxmox-ansible/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/JacobPEvans/proxmox-ansible/releases/tag/v1.0.0
