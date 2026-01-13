@@ -35,3 +35,6 @@ jobs:
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
+          # Workaround for molecule-docker compatibility with ansible-core 2.19+
+          # See: https://github.com/ansible/molecule-plugins/issues/250
+          ALLOW_BROKEN_CONDITIONALS: "1"
