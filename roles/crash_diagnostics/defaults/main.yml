@@ -1,0 +1,31 @@
+---
+# Crash Diagnostics role defaults
+
+# Install kdump for crash dump capture
+crash_diagnostics_install_kdump: true
+
+# GRUB kernel parameters for panic behavior
+crash_diagnostics_grub_params:
+  - nmi_watchdog=1
+  - softlockup_panic=1
+  - hung_task_panic=1
+
+# Sysctl panic settings (runtime + persistent)
+crash_diagnostics_sysctl_settings:
+  - name: kernel.nmi_watchdog
+    value: "1"
+  - name: kernel.softlockup_panic
+    value: "1"
+  - name: kernel.hung_task_panic
+    value: "1"
+  - name: kernel.panic
+    value: "10"  # Reboot after 10 seconds on panic
+  - name: kernel.panic_on_oops
+    value: "1"
+
+# Sysctl config file path
+crash_diagnostics_sysctl_file: /etc/sysctl.d/20-crash-diagnostics.conf
+
+# kdump configuration
+crash_diagnostics_kdump_config:
+  crashkernel: "256M"  # RAM reserved for crash kernel

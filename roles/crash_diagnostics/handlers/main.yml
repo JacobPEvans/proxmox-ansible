@@ -1,0 +1,8 @@
+---
+# Crash Diagnostics role handlers
+
+- name: Update GRUB
+  ansible.builtin.command:
+    cmd: update-grub
+  changed_when: true
+  listen: Update GRUB

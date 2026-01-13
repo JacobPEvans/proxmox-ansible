@@ -1,0 +1,29 @@
+---
+# Standalone playbook for crash diagnostics configuration
+# Run with: ansible-playbook -i ../../local/hosts.yml playbooks/crash_diagnostics.yml
+
+- name: Configure crash diagnostics on Proxmox VE
+  hosts: proxmox
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: crash_diagnostics
+      tags:
+        - crash_diagnostics
+
+  post_tasks:
+    - name: Display reboot reminder
+      ansible.builtin.debug:
+        msg: |
+          Crash diagnostics configured successfully.
+
+          IMPORTANT: A reboot is required for GRUB changes to take effect.
+          The following kernel parameters will be active after reboot:
+            - nmi_watchdog=1 (NMI watchdog enabled)
+            - softlockup_panic=1 (panic on soft lockup)
+            - hung_task_panic=1 (panic on hung tasks)
+
+          To reboot: ansible proxmox -i ../../local/hosts.yml -m reboot
+      tags:
+        - always
