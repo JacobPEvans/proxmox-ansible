@@ -22,3 +22,65 @@
   tags:
     - kernel_tuning
     - sysctl
+
+# ------------------------------------------------------------------------------
+# Proxmox Boot Parameters
+# Uses /etc/kernel/cmdline + proxmox-boot-tool (NOT grub)
+# ------------------------------------------------------------------------------
+
+- name: Manage Proxmox boot parameters
+  when: kernel_tuning_boot_params_enabled | default(false)
+  tags:
+    - kernel_tuning
+    - boot_params
+    - proxmox
+  block:
+    - name: Read current kernel cmdline
+      ansible.builtin.slurp:
+        src: /etc/kernel/cmdline
+      register: kernel_tuning_current_cmdline
+
+    - name: Parse base boot parameters
+      ansible.builtin.set_fact:
+        kernel_tuning_base_params: >-
+          {{ (kernel_tuning_current_cmdline.content | b64decode | trim).split()
+             | reject('match', '^(nmi_watchdog|softlockup_panic|hung_task_panic|mce|edac_report|crashkernel|clocksource|tsc|nosmt).*')
+             | list
+             | join(' ') }}
+
+    - name: Build stability parameters
+      ansible.builtin.set_fact:
+        kernel_tuning_stability_params: >-
+          clocksource={{ kernel_tuning_clocksource }}
+          tsc={{ kernel_tuning_tsc_mode }}
+          {{ 'nosmt' if kernel_tuning_disable_smt else '' }}
+          nmi_watchdog={{ kernel_tuning_nmi_watchdog }}
+          softlockup_panic={{ kernel_tuning_softlockup_panic }}
+          hung_task_panic={{ kernel_tuning_hung_task_panic }}
+          mce={{ kernel_tuning_mce_level }}
+          edac_report={{ kernel_tuning_edac_report }}
+          crashkernel={{ kernel_tuning_crashkernel }}
+
+    - name: Build complete cmdline
+      ansible.builtin.set_fact:
+        kernel_tuning_new_cmdline: >-
+          {{ kernel_tuning_base_params }}
+          {{ kernel_tuning_stability_params | regex_replace('\s+', ' ') | trim }}
+
+    - name: Display planned cmdline change
+      ansible.builtin.debug:
+        msg: |
+          Current: {{ kernel_tuning_current_cmdline.content | b64decode | trim }}
+          New:     {{ kernel_tuning_new_cmdline }}
+      changed_when: false
+
+    - name: Write new kernel cmdline
+      ansible.builtin.copy:
+        content: "{{ kernel_tuning_new_cmdline }}\n"
+        dest: /etc/kernel/cmdline
+        owner: root
+        group: root
+        mode: "0644"
+        backup: true
+      register: kernel_tuning_cmdline_result
+      notify: Refresh proxmox boot
