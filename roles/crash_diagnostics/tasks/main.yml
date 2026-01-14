@@ -33,9 +33,10 @@
     value: "{{ item.value }}"
     state: present
     sysctl_set: true
-    reload: true
+    reload: false
   loop: "{{ crash_diagnostics_sysctl_settings }}"
   register: crash_diagnostics_sysctl_result
+  notify: Reload sysctl
   # Some kernel settings (nmi_watchdog, etc.) require hardware access
   # and will fail in containers - this is expected and safe to ignore
   failed_when:
