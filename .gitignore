@@ -34,6 +34,8 @@ vault.yml
 secrets.yml
 .vault_pass
 .vault_password
+SECRETS_SETUP.md
+.doppler.yaml
 
 # Local inventory overrides
 inventory/local/

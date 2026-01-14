@@ -1,12 +1,7 @@
 ---
 # Main playbook for Proxmox VE server configuration
 #
-# Usage:
-#   ./scripts/run-ansible.sh playbooks/site.yml --check  # dry run
-#   ./scripts/run-ansible.sh playbooks/site.yml          # apply
-#
-# Required Doppler secrets (iac-conf-mgmt/prd):
-#   PVE_HOST, PVE_USER, PVE_SSH_PRIVATE_KEY, HEALTHCHECK_PING_KEY
+# Usage: See local SECRETS_SETUP.md for environment configuration
 
 - name: Configure Proxmox VE servers
   hosts: proxmox

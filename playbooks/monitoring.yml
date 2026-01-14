@@ -1,11 +1,7 @@
 ---
 # Playbook: Configure Proxmox monitoring for crash investigation
 #
-# Usage:
-#   ./scripts/run-ansible.sh playbooks/monitoring.yml
-#
-# Required Doppler secrets:
-#   PVE_HOST, PVE_USER, PVE_SSH_PRIVATE_KEY, HEALTHCHECK_PING_KEY
+# Usage: See local SECRETS_SETUP.md for environment configuration
 
 - name: Configure Proxmox monitoring
   hosts: proxmox

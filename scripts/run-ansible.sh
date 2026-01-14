@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Ansible runner with Doppler secrets integration
-# Extracts SSH key from Doppler to temp file, runs playbook, cleans up
+# Ansible runner - extracts SSH key from environment, runs playbook
+# See local SECRETS_SETUP.md for environment configuration
 
 set -euo pipefail
 
@@ -24,10 +24,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Extract SSH key from Doppler and write to temp file
-# Doppler must have: PVE_SSH_PRIVATE_KEY, PVE_HOST, PVE_USER
-doppler run --command "echo \"\$PVE_SSH_PRIVATE_KEY\"" > "$SSH_KEY_FILE"
+# Write SSH key from environment to temp file
+echo "$PROXMOX_SSH_PRIVATE_KEY" > "$SSH_KEY_FILE"
 
-# Run ansible-playbook with Doppler environment
+# Run ansible-playbook
 export ANSIBLE_PRIVATE_KEY_FILE="$SSH_KEY_FILE"
-doppler run -- ansible-playbook "$PLAYBOOK" "$@"
+uv run --with ansible-core --with ansible ansible-playbook "$PLAYBOOK" "$@"
