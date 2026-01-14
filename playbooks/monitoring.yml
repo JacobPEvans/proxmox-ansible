@@ -2,10 +2,10 @@
 # Playbook: Configure Proxmox monitoring for crash investigation
 #
 # Usage:
-#   ansible-playbook playbooks/monitoring.yml
+#   ./scripts/run-ansible.sh playbooks/monitoring.yml
 #
-# Variables (set via vault or extra-vars):
-#   healthchecks_ping_url: Your healthchecks.io ping URL
+# Required Doppler secrets:
+#   PVE_HOST, PVE_USER, PVE_SSH_PRIVATE_KEY, HEALTHCHECK_PING_KEY
 
 - name: Configure Proxmox monitoring
   hosts: proxmox
@@ -13,3 +13,5 @@
 
   roles:
     - role: proxmox_monitoring
+      vars:
+        proxmox_monitoring_healthchecks_ping_url: "{{ lookup('env', 'HEALTHCHECK_PING_KEY') }}"
