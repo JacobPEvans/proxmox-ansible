@@ -6,9 +6,8 @@
 # =============================================================================
 
 # Core crash/debug packages
-# Note: Some packages (htop, iotop, lm-sensors, rasdaemon, sysstat) are already
-# installed by other roles (common, proxmox_monitoring) and will be removed
-# in a subsequent commit to avoid duplication.
+# Note: htop, iotop, lm-sensors, rasdaemon installed by common role
+# Note: sysstat installed by proxmox_monitoring role
 crash_diagnostics_packages:
   # Crash dump tools
   - kdump-tools      # Kernel crash dump capture
@@ -29,13 +28,6 @@ crash_diagnostics_packages:
 
   # Hardware monitoring
   - smartmontools    # Disk SMART monitoring
-  - lm-sensors       # Hardware sensors (also in common role)
-  - rasdaemon        # RAS error monitoring (also in common role)
-
-  # Interactive monitoring (optional but useful)
-  - htop             # Interactive process viewer (also in common role)
-  - iotop            # I/O monitoring (also in common role)
-  - sysstat          # System statistics (also in proxmox_monitoring role)
 
 # =============================================================================
 # SYSCTL CONFIGURATION
