@@ -1,0 +1,64 @@
+---
+# Crash Diagnostics role tasks
+
+# =============================================================================
+# PACKAGE INSTALLATION
+# =============================================================================
+
+- name: Install debugging and crash diagnostic packages
+  ansible.builtin.apt:
+    name: "{{ crash_diagnostics_packages }}"
+    state: present
+    cache_valid_time: 3600
+  tags:
+    - crash_diagnostics
+    - packages
+
+# =============================================================================
+# SYSCTL CONFIGURATION
+# =============================================================================
+
+- name: Remove old manual sysctl debug configs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ crash_diagnostics_sysctl_cleanup }}"
+  tags:
+    - crash_diagnostics
+    - sysctl
+
+- name: Configure crash diagnostics sysctl settings
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_set: true
+    reload: false
+  loop: "{{ crash_diagnostics_sysctl_settings }}"
+  register: crash_diagnostics_sysctl_result
+  notify: Reload sysctl
+  # Some kernel settings (nmi_watchdog, etc.) require hardware access
+  # and will fail in containers - this is expected and safe to ignore
+  failed_when:
+    - crash_diagnostics_sysctl_result.failed
+    - ansible_virtualization_type != 'docker'
+  tags:
+    - crash_diagnostics
+    - sysctl
+
+# =============================================================================
+# GRUB CONFIGURATION
+# =============================================================================
+
+- name: Deploy GRUB drop-in config for crash diagnostics
+  ansible.builtin.template:
+    src: grub.cfg.j2
+    dest: "{{ crash_diagnostics_grub_dropin }}"
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  notify: Update GRUB
+  tags:
+    - crash_diagnostics
+    - grub

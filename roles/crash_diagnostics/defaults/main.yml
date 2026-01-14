@@ -1,0 +1,135 @@
+---
+# Crash Diagnostics role defaults
+
+# =============================================================================
+# PACKAGE INSTALLATION
+# =============================================================================
+
+# Core crash/debug packages
+# Note: htop, iotop, lm-sensors, rasdaemon installed by common role
+# Note: sysstat installed by proxmox_monitoring role
+crash_diagnostics_packages:
+  # Crash dump tools
+  - kdump-tools      # Kernel crash dump capture
+  - crash            # Kernel crash analysis
+
+  # System tracing
+  - strace           # System call tracer
+
+  # Network diagnostics
+  - tcpdump          # Network packet analyzer
+  - nmap             # Network scanner
+  - traceroute       # Network path tracing
+  - socat            # Multipurpose relay
+
+  # Process/file diagnostics
+  - lsof             # List open files
+  - psmisc           # fuser, killall, pstree
+
+  # Hardware monitoring
+  - smartmontools    # Disk SMART monitoring
+
+# =============================================================================
+# SYSCTL CONFIGURATION
+# =============================================================================
+
+# Comprehensive kernel panic and debug settings
+crash_diagnostics_sysctl_settings:
+  # Panic behavior - auto-reboot after crash
+  - name: kernel.panic
+    value: "10"
+    comment: "Reboot 10 seconds after panic"
+
+  - name: kernel.panic_on_oops
+    value: "1"
+    comment: "Panic on kernel oops"
+
+  # Soft lockup detection
+  - name: kernel.softlockup_panic
+    value: "1"
+    comment: "Panic on soft lockup (CPU stuck in kernel)"
+
+  - name: kernel.softlockup_all_cpu_backtrace
+    value: "1"
+    comment: "Dump all CPU backtraces on soft lockup"
+
+  # Hard lockup detection
+  - name: kernel.hardlockup_panic
+    value: "1"
+    comment: "Panic on hard lockup (CPU not responding to NMI)"
+
+  - name: kernel.hardlockup_all_cpu_backtrace
+    value: "1"
+    comment: "Dump all CPU backtraces on hard lockup"
+
+  # Hung task detection
+  - name: kernel.hung_task_panic
+    value: "1"
+    comment: "Panic on hung task (task stuck in D state)"
+
+  # NMI handling
+  - name: kernel.nmi_watchdog
+    value: "1"
+    comment: "Enable NMI watchdog"
+
+  - name: kernel.panic_on_io_nmi
+    value: "1"
+    comment: "Panic on I/O channel NMI"
+
+  - name: kernel.panic_on_unrecovered_nmi
+    value: "1"
+    comment: "Panic on unrecovered NMI"
+
+  - name: kernel.unknown_nmi_panic
+    value: "1"
+    comment: "Panic on unknown NMI"
+
+  # OOM handling
+  - name: vm.panic_on_oom
+    value: "{{ crash_diagnostics_panic_on_oom | default(0) }}"
+    comment: "Panic on OOM instead of killing processes (default: disabled to allow selective process termination)"
+
+  # Watchdog settings
+  - name: kernel.watchdog_thresh
+    value: "10"
+    comment: "Watchdog threshold in seconds"
+
+  # Logging settings for maximum debug output
+  - name: kernel.printk
+    value: "7 7 7 7"
+    comment: "Log everything (console_loglevel, default_message_loglevel, minimum_console_loglevel, default_console_loglevel)"
+
+  - name: kernel.printk_delay
+    value: "0"
+    comment: "No delay between printk messages"
+
+  - name: kernel.printk_ratelimit
+    value: "0"
+    comment: "Disable printk rate limiting"
+
+  - name: kernel.printk_ratelimit_burst
+    value: "10000"
+    comment: "High burst limit for printk"
+
+# =============================================================================
+# GRUB CONFIGURATION
+# =============================================================================
+
+# GRUB drop-in config file (use .d directory for upgrade safety)
+crash_diagnostics_grub_dropin: /etc/default/grub.d/99-crash-diagnostics.cfg
+
+# GRUB kernel parameters for panic behavior
+# These are set at boot time before sysctl runs
+crash_diagnostics_grub_params:
+  - nmi_watchdog=1
+  - softlockup_panic=1
+  - hung_task_panic=1
+
+# =============================================================================
+# CLEANUP
+# =============================================================================
+
+# Old sysctl files to remove (replaced by direct sysctl module management)
+crash_diagnostics_sysctl_cleanup:
+  - /etc/sysctl.d/99-debug.conf
+  - /etc/sysctl.d/99-crash-diagnostics.conf

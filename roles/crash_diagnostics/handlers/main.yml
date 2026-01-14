@@ -1,0 +1,18 @@
+---
+# Crash Diagnostics role handlers
+
+- name: Reload sysctl
+  ansible.builtin.command:
+    cmd: sysctl -p
+  changed_when: false
+  # Some kernel settings require hardware access and may fail in containers
+  when: ansible_virtualization_type != 'docker'
+  listen: Reload sysctl
+
+- name: Update GRUB
+  ansible.builtin.command:
+    cmd: update-grub
+  changed_when: false
+  # update-grub doesn't exist in containers
+  when: ansible_virtualization_type != 'docker'
+  listen: Update GRUB

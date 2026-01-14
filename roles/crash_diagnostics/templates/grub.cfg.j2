@@ -1,0 +1,7 @@
+# {{ ansible_managed }}
+#
+# Crash Diagnostics - GRUB Kernel Parameters
+#
+# These parameters are set at boot time to enable kernel panic
+# behavior before sysctl settings are applied.
+GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT:+$GRUB_CMDLINE_LINUX_DEFAULT }{{ crash_diagnostics_grub_params | join(' ') }}"

@@ -26,6 +26,13 @@
       tags:
         - ulimits
 
+    - name: Include crash_diagnostics role
+      ansible.builtin.include_role:
+        name: crash_diagnostics
+      tags:
+        - crash_diagnostics
+
     # Note: common role requires specific packages (lm-sensors, rasdaemon)
     # Note: zfs_swap role requires ZFS which is not available in containers
+    # Note: GRUB configuration in crash_diagnostics is skipped in containers (no GRUB)
     # Full integration tests should run on actual Proxmox hosts
