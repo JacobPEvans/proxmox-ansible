@@ -29,6 +29,10 @@ crash_diagnostics_packages:
   # Hardware monitoring
   - smartmontools    # Disk SMART monitoring
 
+  # MCE/EDAC hardware error detection
+  - mcelog           # Machine Check Exception logging daemon
+  - edac-utils       # EDAC (Error Detection and Correction) utilities
+
 # =============================================================================
 # SYSCTL CONFIGURATION
 # =============================================================================
@@ -111,6 +115,16 @@ crash_diagnostics_sysctl_settings:
     value: "10000"
     comment: "High burst limit for printk"
 
+  # Fatal signal logging for debugging
+  - name: kernel.print_fatal_signals
+    value: "1"
+    comment: "Log fatal signals (SIGKILL, SIGSEGV, etc.) for debugging"
+
+  # EDAC reporting
+  - name: edac.edac_report
+    value: "1"
+    comment: "Report EDAC errors to kernel log"
+
 # =============================================================================
 # GRUB CONFIGURATION
 # =============================================================================
@@ -124,6 +138,8 @@ crash_diagnostics_grub_params:
   - nmi_watchdog=1
   - softlockup_panic=1
   - hung_task_panic=1
+  - mce=3                # Maximum MCE verbosity (0=off, 1=default, 2=CMCI, 3=all)
+  - edac_report=1        # Enable EDAC reporting at boot
 
 # =============================================================================
 # CLEANUP
