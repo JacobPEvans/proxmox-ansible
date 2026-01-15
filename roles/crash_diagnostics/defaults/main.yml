@@ -120,15 +120,8 @@ crash_diagnostics_sysctl_settings:
     value: "10000"
     comment: "High burst limit for printk"
 
-  # Fatal signal logging for debugging
-  - name: kernel.print_fatal_signals
-    value: "1"
-    comment: "Log fatal signals (SIGKILL, SIGSEGV, etc.) for debugging"
-
-  # EDAC reporting
-  - name: edac.edac_report
-    value: "1"
-    comment: "Report EDAC errors to kernel log"
+  # Note: kernel.print_fatal_signals and edac.edac_report are not available
+  # on all kernels. EDAC reporting is enabled via GRUB params instead.
 
 # =============================================================================
 # GRUB CONFIGURATION
