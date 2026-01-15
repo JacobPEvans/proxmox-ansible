@@ -1,0 +1,27 @@
+# Custom memtest86+ entry for ZFS on root with proxmox-boot-tool
+# This file must be placed on the FAT32 boot partition, NOT in /boot/grub/
+#
+# Background: When Proxmox uses ZFS on root with proxmox-boot-tool, the GRUB
+# config at /boot/grub/grub.cfg is NOT used. Instead, GRUB loads from the
+# separate boot partition (typically /dev/sdX2 or /dev/nvmeXn1p2).
+#
+# The standard memtest86+ package installs to /boot/ on the ZFS root, which
+# is inaccessible from the boot partition's GRUB. This custom.cfg makes
+# memtest86+ available by placing the binary and menu entry on the boot
+# partition where GRUB can find them.
+#
+# UUID {{ crash_diagnostics_boot_partition_uuid }} is the boot partition
+
+menuentry "Memory Test (memtest86+)" --class memtest {
+    insmod part_gpt
+    insmod fat
+    search --no-floppy --fs-uuid --set=root {{ crash_diagnostics_boot_partition_uuid }}
+    linux16 /memtest86+x64.bin
+}
+
+menuentry "Memory Test (memtest86+, serial console)" --class memtest {
+    insmod part_gpt
+    insmod fat
+    search --no-floppy --fs-uuid --set=root {{ crash_diagnostics_boot_partition_uuid }}
+    linux16 /memtest86+x64.bin console=ttyS0,115200
+}
