@@ -18,19 +18,7 @@
 # MCE/EDAC HARDWARE ERROR MONITORING
 # =============================================================================
 
-- name: Enable mcelog service for hardware error logging
-  ansible.builtin.systemd:
-    name: mcelog
-    enabled: true
-    state: started
-  # mcelog only works on physical hardware, not in containers/VMs
-  when: ansible_virtualization_type == 'NA' or ansible_virtualization_role == 'host'
-  failed_when: false
-  tags:
-    - crash_diagnostics
-    - mcelog
-
-- name: Check if rasdaemon is available (alternative to mcelog on newer systems)
+- name: Check if rasdaemon is available
   ansible.builtin.stat:
     path: /usr/sbin/rasdaemon
   register: crash_diagnostics_rasdaemon_binary
@@ -38,7 +26,7 @@
     - crash_diagnostics
     - rasdaemon
 
-- name: Enable rasdaemon service if available
+- name: Enable rasdaemon service for hardware error logging
   ansible.builtin.systemd:
     name: rasdaemon
     enabled: true

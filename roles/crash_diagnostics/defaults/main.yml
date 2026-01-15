@@ -30,7 +30,8 @@ crash_diagnostics_packages:
   - smartmontools    # Disk SMART monitoring
 
   # MCE/EDAC hardware error detection
-  - mcelog           # Machine Check Exception logging daemon
+  # Note: mcelog is deprecated on newer kernels; rasdaemon handles MCE logging
+  - rasdaemon        # RAS daemon for hardware error logging (replaces mcelog)
   - edac-utils       # EDAC (Error Detection and Correction) utilities
 
   # DIMM identification and memory testing
