@@ -38,6 +38,7 @@
     enabled: true
     state: started
   when:
+    - ansible_service_mgr == 'systemd'
     - crash_diagnostics_rasdaemon_binary.stat.exists
     - ansible_virtualization_type == 'NA' or ansible_virtualization_role == 'host'
   tags:
@@ -136,6 +137,7 @@
     name: memory-config-logger
     enabled: true
     daemon_reload: true
+  when: ansible_service_mgr == 'systemd'
   tags:
     - crash_diagnostics
     - memory_logging
@@ -173,8 +175,10 @@
     enabled: true
     state: started
     daemon_reload: true
-  # Only on physical hardware, not in containers/VMs
-  when: ansible_virtualization_type == 'NA' or ansible_virtualization_role == 'host'
+  # Only on physical hardware with systemd, not in containers/VMs
+  when:
+    - ansible_service_mgr == 'systemd'
+    - ansible_virtualization_type == 'NA' or ansible_virtualization_role == 'host'
   tags:
     - crash_diagnostics
     - mce_monitor
