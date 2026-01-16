@@ -29,3 +29,16 @@
         path: /etc/systemd/system.conf.d/limits.conf
       register: systemd_limits
       failed_when: not systemd_limits.stat.exists
+
+    - name: Verify /etc/kernel/cmdline exists (if boot params enabled)
+      ansible.builtin.stat:
+        path: /etc/kernel/cmdline
+      register: kernel_cmdline_file
+      # This is only expected to exist on actual Proxmox systems, not in molecule Docker containers
+      failed_when: false
+      changed_when: false
+
+    - name: Display kernel cmdline content if it exists
+      ansible.builtin.debug:
+        msg: "Kernel cmdline found (requires Proxmox): {{ kernel_cmdline_file.stat.exists }}"
+      changed_when: false

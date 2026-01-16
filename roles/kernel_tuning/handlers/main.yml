@@ -1,0 +1,9 @@
+---
+# Kernel Tuning role handlers
+
+- name: Refresh proxmox boot
+  ansible.builtin.command:
+    cmd: proxmox-boot-tool refresh
+  changed_when: true
+  when: ansible_virtualization_type != 'docker'
+  listen: Refresh proxmox boot
