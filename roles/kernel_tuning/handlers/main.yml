@@ -1,5 +1,9 @@
 ---
 # Kernel Tuning role handlers
+#
+# NOTE: For Proxmox, proxmox-boot-tool refresh handles BOTH UEFI and Legacy BIOS.
+# It reads /etc/kernel/cmdline and updates the appropriate bootloader config.
+# Do NOT use update-grub directly on Proxmox systems.
 
 - name: Refresh proxmox boot
   ansible.builtin.command:

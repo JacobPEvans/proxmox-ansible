@@ -6,12 +6,18 @@ zfs_swap_size: "96G"
 zfs_swap_pool: "rpool"
 zfs_swap_dataset: "swap"
 
-# Kernel Tuning
+# Kernel Tuning - Sysctl
 kernel_tuning_swappiness: 10
 kernel_tuning_vfs_cache_pressure: 50
 kernel_tuning_dirty_ratio: 10
 kernel_tuning_dirty_background_ratio: 5
 kernel_tuning_overcommit_memory: 0
+
+# Kernel Tuning - Boot Parameters (AMD Zen1 stability)
+kernel_tuning_boot_params_enabled: true
+kernel_tuning_clocksource: hpet
+kernel_tuning_tsc_mode: unstable
+kernel_tuning_disable_smt: true
 
 # Ulimits Configuration
 ulimits_nofile: 65536
