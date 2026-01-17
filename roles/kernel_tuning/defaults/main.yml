@@ -43,9 +43,3 @@ kernel_tuning_mce_level: 3
 
 # EDAC error reporting
 kernel_tuning_edac_report: 1
-
-# Crashkernel reservation for kdump (format: size or range:size)
-# WARNING: This overlaps with crash_diagnostics role which sets crashkernel via /etc/kernel/cmdline
-# Only enable if not using crash_diagnostics role for boot parameters
-kernel_tuning_manage_crashkernel: false
-kernel_tuning_crashkernel: "512M-:192M"

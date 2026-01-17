@@ -25,83 +25,153 @@
 
 # ------------------------------------------------------------------------------
 # Proxmox Boot Parameters
-# Uses /etc/kernel/cmdline + proxmox-boot-tool (NOT grub)
+# Supports both UEFI (systemd-boot) and Legacy BIOS (GRUB)
+#
+# UEFI: Uses /etc/kernel/cmdline + proxmox-boot-tool refresh
+# BIOS: Uses /etc/default/grub.d/ + proxmox-boot-tool refresh
 # ------------------------------------------------------------------------------
 
 - name: Manage Proxmox boot parameters
-  when: kernel_tuning_boot_params_enabled | default(false)
+  when: kernel_tuning_boot_params_enabled | default(false) | bool
   tags:
     - kernel_tuning
     - boot_params
     - proxmox
   block:
-    - name: Check if /etc/kernel/cmdline exists
-      ansible.builtin.stat:
-        path: /etc/kernel/cmdline
-      register: kernel_tuning_cmdline_stat
-      failed_when: false
+    - name: Detect Proxmox boot method
+      ansible.builtin.command:
+        cmd: proxmox-boot-tool status
+      register: kernel_tuning_boot_status
       changed_when: false
+      failed_when: false
 
-    - name: Skip boot parameter management if /etc/kernel/cmdline does not exist
-      ansible.builtin.debug:
-        msg: "Boot parameter management skipped: /etc/kernel/cmdline not found (requires Proxmox)"
-      when: not kernel_tuning_cmdline_stat.stat.exists
-
-    - name: Read current kernel cmdline
-      ansible.builtin.slurp:
-        src: /etc/kernel/cmdline
-      register: kernel_tuning_current_cmdline
-      when: kernel_tuning_cmdline_stat.stat.exists
-
-    - name: Parse base boot parameters
+    - name: Set boot method fact
       ansible.builtin.set_fact:
-        kernel_tuning_base_params: >-
-          {{ (kernel_tuning_current_cmdline.content | b64decode | trim).split()
-             | reject('match', '^(nmi_watchdog|softlockup_panic|hung_task_panic|mce|edac_report|crashkernel|clocksource|tsc)(=.*)?$')
-             | reject('match', '^nosmt$')
-             | list
-             | join(' ') }}
-      when: kernel_tuning_cmdline_stat.stat.exists
+        kernel_tuning_boot_method: >-
+          {%- if (kernel_tuning_boot_status is defined)
+                and (kernel_tuning_boot_status.stdout is defined)
+                and ('legacy bios' in (kernel_tuning_boot_status.stdout | lower)) -%}
+          grub
+          {%- elif (kernel_tuning_boot_status is defined)
+                  and (kernel_tuning_boot_status.rc is defined)
+                  and (kernel_tuning_boot_status.rc == 0) -%}
+          uefi
+          {%- else -%}
+          unknown
+          {%- endif -%}
 
-    - name: Build stability parameters
+    - name: Display detected boot method
+      ansible.builtin.debug:
+        msg: "Detected boot method: {{ kernel_tuning_boot_method }}"
+
+    - name: Warn when boot method could not be detected
+      ansible.builtin.debug:
+        msg: "Could not detect Proxmox boot method from 'proxmox-boot-tool status'; skipping boot parameter configuration."
+      when: kernel_tuning_boot_method == 'unknown'
+
+    - name: Build stability parameters string
       ansible.builtin.set_fact:
         kernel_tuning_stability_params: >-
-          {{ (['clocksource=' ~ kernel_tuning_clocksource,
-              'tsc=' ~ kernel_tuning_tsc_mode,
-              'nmi_watchdog=' ~ kernel_tuning_nmi_watchdog,
-              'softlockup_panic=' ~ kernel_tuning_softlockup_panic,
-              'hung_task_panic=' ~ kernel_tuning_hung_task_panic,
-              'mce=' ~ kernel_tuning_mce_level,
-              'edac_report=' ~ kernel_tuning_edac_report]
-             + (['crashkernel=' ~ kernel_tuning_crashkernel] if (kernel_tuning_manage_crashkernel | default(false)) else []))
-             | select('defined')
-             | list + (['nosmt'] if kernel_tuning_disable_smt else [])
-             | join(' ') }}
-      when: kernel_tuning_cmdline_stat.stat.exists
+          {{ ((['clocksource=' ~ kernel_tuning_clocksource,
+               'tsc=' ~ kernel_tuning_tsc_mode,
+               'nmi_watchdog=' ~ kernel_tuning_nmi_watchdog | string,
+               'softlockup_panic=' ~ kernel_tuning_softlockup_panic | string,
+               'hung_task_panic=' ~ kernel_tuning_hung_task_panic | string,
+               'mce=' ~ kernel_tuning_mce_level | string,
+               'edac_report=' ~ kernel_tuning_edac_report | string]
+              + (['nosmt'] if (kernel_tuning_disable_smt | default(false) | bool) else []))
+             | join(' ')) }}
+      when: kernel_tuning_boot_method != 'unknown'
 
-    - name: Build complete cmdline
-      ansible.builtin.set_fact:
-        kernel_tuning_new_cmdline: >-
-          {{ kernel_tuning_base_params }}
-          {{ kernel_tuning_stability_params | regex_replace('\s+', ' ') | trim }}
-      when: kernel_tuning_cmdline_stat.stat.exists
-
-    - name: Display planned cmdline change
+    - name: Display stability parameters
       ansible.builtin.debug:
-        msg: |
-          Current: {{ kernel_tuning_current_cmdline.content | b64decode | trim }}
-          New:     {{ kernel_tuning_new_cmdline }}
-      changed_when: false
-      when: kernel_tuning_cmdline_stat.stat.exists
+        msg: "Stability params: {{ kernel_tuning_stability_params }}"
+      when: kernel_tuning_boot_method != 'unknown'
 
-    - name: Write new kernel cmdline
-      ansible.builtin.copy:
-        content: "{{ kernel_tuning_new_cmdline }}\n"
-        dest: /etc/kernel/cmdline
-        owner: root
-        group: root
-        mode: "0644"
-        backup: true
-      register: kernel_tuning_cmdline_result
-      notify: Refresh proxmox boot
-      when: kernel_tuning_cmdline_stat.stat.exists
+    # --------------------------------------------------------------------------
+    # Legacy BIOS (GRUB) - Use /etc/default/grub.d/
+    # --------------------------------------------------------------------------
+    - name: Configure GRUB boot parameters (Legacy BIOS)
+      when: kernel_tuning_boot_method == 'grub'
+      block:
+        # NOTE:
+        # - This drop-in appends stability parameters to any existing
+        #   GRUB_CMDLINE_LINUX_DEFAULT from /etc/default/grub and other
+        #   files in /etc/default/grub.d/, it does not replace them.
+        # - The order of kernel parameters on the command line can matter
+        #   for some options; parameters from this role will appear after
+        #   any previously defined GRUB_CMDLINE_LINUX_DEFAULT settings.
+        - name: Create kernel tuning GRUB config
+          ansible.builtin.copy:
+            content: |
+              # Ansible managed - kernel_tuning role
+              # Kernel stability parameters
+              GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT:+$GRUB_CMDLINE_LINUX_DEFAULT }{{ kernel_tuning_stability_params }}"
+            dest: /etc/default/grub.d/99-kernel-tuning.cfg
+            owner: root
+            group: root
+            mode: "0644"
+          notify: Refresh proxmox boot
+
+    # --------------------------------------------------------------------------
+    # UEFI (systemd-boot) - Use /etc/kernel/cmdline
+    # --------------------------------------------------------------------------
+    - name: Configure systemd-boot parameters (UEFI)
+      when: kernel_tuning_boot_method == 'uefi'
+      block:
+        - name: Check if /etc/kernel/cmdline exists
+          ansible.builtin.stat:
+            path: /etc/kernel/cmdline
+          register: kernel_tuning_cmdline_stat
+          failed_when: false
+          changed_when: false
+
+        - name: Read current kernel cmdline
+          ansible.builtin.slurp:
+            src: /etc/kernel/cmdline
+          register: kernel_tuning_current_cmdline
+          when: kernel_tuning_cmdline_stat.stat.exists
+
+        - name: Parse base boot parameters (removing managed params)
+          ansible.builtin.set_fact:
+            kernel_tuning_base_params: >-
+              {{ (kernel_tuning_current_cmdline.content | b64decode | trim).split()
+                 | reject('match', '^(nmi_watchdog|softlockup_panic|hung_task_panic|mce|edac_report|clocksource|tsc)(=.*)?$')
+                 | reject('match', '^nosmt$')
+                 | list
+                 | join(' ') }}
+          when: kernel_tuning_cmdline_stat.stat.exists
+
+        - name: Initialize base params if cmdline does not exist
+          ansible.builtin.set_fact:
+            kernel_tuning_base_params: ""
+          when: not kernel_tuning_cmdline_stat.stat.exists
+
+        - name: Build complete cmdline
+          ansible.builtin.set_fact:
+            kernel_tuning_new_cmdline: >-
+              {{ (kernel_tuning_base_params | trim) ~ ' ' ~ (kernel_tuning_stability_params | trim) | trim }}
+
+        - name: Display planned cmdline change
+          ansible.builtin.debug:
+            msg: |
+              Current: {{ kernel_tuning_current_cmdline.content | b64decode | trim }}
+              New:     {{ kernel_tuning_new_cmdline }}
+          changed_when: false
+          when: kernel_tuning_cmdline_stat.stat.exists
+
+        - name: Warn when /etc/kernel/cmdline does not exist
+          ansible.builtin.debug:
+            msg: "WARNING: /etc/kernel/cmdline does not exist. This may indicate a non-UEFI or non-Proxmox system. Boot parameter configuration will be skipped."
+          when: not kernel_tuning_cmdline_stat.stat.exists
+
+        - name: Write new kernel cmdline
+          ansible.builtin.copy:
+            content: "{{ kernel_tuning_new_cmdline }}\n"
+            dest: /etc/kernel/cmdline
+            owner: root
+            group: root
+            mode: "0644"
+            backup: true
+          notify: Refresh proxmox boot
+          when: kernel_tuning_cmdline_stat.stat.exists

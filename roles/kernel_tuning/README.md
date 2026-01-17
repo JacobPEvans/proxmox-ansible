@@ -15,9 +15,9 @@ Optimizes VM and memory management parameters:
 
 ### Boot Parameter Management (Proxmox-specific)
 
-Manages kernel boot parameters via `/etc/kernel/cmdline` and `proxmox-boot-tool refresh` (NOT GRUB).
+Manages kernel boot parameters via `/etc/kernel/cmdline` (UEFI) or GRUB configuration (Legacy BIOS), and `proxmox-boot-tool refresh`.
 
-**WARNING**: This feature requires Proxmox VE with an existing `/etc/kernel/cmdline` file. It will be skipped gracefully on non-Proxmox systems.
+**WARNING**: This feature requires Proxmox VE. It will be skipped gracefully on non-Proxmox systems. For UEFI, it requires an existing `/etc/kernel/cmdline` file.
 
 Available boot parameters:
 
@@ -81,10 +81,20 @@ The `crashkernel` parameter is disabled by default (`kernel_tuning_manage_crashk
 
 Molecule tests verify sysctl configuration in Docker containers. Boot parameter tests are limited to existence checks since Docker doesn't have `/etc/kernel/cmdline`.
 
-For full boot parameter validation on actual Proxmox systems, manually verify:
+For full boot parameter validation on actual Proxmox systems:
+
+**UEFI systems**, verify:
 
 ```bash
 cat /etc/kernel/cmdline
+```
+
+**Legacy BIOS systems**, verify:
+
+```bash
+cat /etc/default/grub.d/99-kernel-tuning.cfg
+# Then check final boot parameters:
+cat /proc/cmdline
 ```
 
 ## Example Playbook
