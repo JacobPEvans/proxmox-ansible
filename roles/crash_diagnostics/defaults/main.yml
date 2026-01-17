@@ -29,6 +29,15 @@ crash_diagnostics_packages:
   # Hardware monitoring
   - smartmontools    # Disk SMART monitoring
 
+  # MCE/EDAC hardware error detection
+  # Note: mcelog is deprecated on newer kernels; rasdaemon handles MCE logging
+  - rasdaemon        # RAS daemon for hardware error logging (replaces mcelog)
+  - edac-utils       # EDAC (Error Detection and Correction) utilities
+
+  # DIMM identification and memory testing
+  - i2c-tools        # decode-dimms for DIMM SPD data
+  - memtest86+       # Boot-time memory testing
+
 # =============================================================================
 # SYSCTL CONFIGURATION
 # =============================================================================
@@ -111,6 +120,9 @@ crash_diagnostics_sysctl_settings:
     value: "10000"
     comment: "High burst limit for printk"
 
+  # Note: kernel.print_fatal_signals is not available on all kernels.
+  # Note: edac.edac_report is a kernel module parameter (not sysctl) and is set via GRUB instead.
+
 # =============================================================================
 # GRUB CONFIGURATION
 # =============================================================================
@@ -124,6 +136,8 @@ crash_diagnostics_grub_params:
   - nmi_watchdog=1
   - softlockup_panic=1
   - hung_task_panic=1
+  - mce=3                # Maximum MCE verbosity (0=off, 1=default, 2=CMCI, 3=all)
+  - edac_report=1        # Enable EDAC reporting at boot
 
 # =============================================================================
 # CLEANUP
@@ -133,3 +147,26 @@ crash_diagnostics_grub_params:
 crash_diagnostics_sysctl_cleanup:
   - /etc/sysctl.d/99-debug.conf
   - /etc/sysctl.d/99-crash-diagnostics.conf
+
+# =============================================================================
+# BOOT-TIME MEMORY LOGGING
+# =============================================================================
+
+# Directory to store memory configuration logs
+crash_diagnostics_memory_log_dir: /var/log/memory-config
+
+# Number of boot logs to retain
+crash_diagnostics_memory_log_retention: 30
+
+# Script location
+crash_diagnostics_memory_logger_script: /usr/local/bin/memory-config-logger.sh
+
+# =============================================================================
+# REAL-TIME MCE MONITORING
+# =============================================================================
+
+# MCE monitor log file
+crash_diagnostics_mce_log_file: /var/log/mce-monitor.log
+
+# MCE monitor script location
+crash_diagnostics_mce_monitor_script: /usr/local/bin/mce-monitor.sh

@@ -1,0 +1,12 @@
+[Unit]
+Description=Log memory configuration at boot
+After=local-fs.target
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart={{ crash_diagnostics_memory_logger_script }}
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

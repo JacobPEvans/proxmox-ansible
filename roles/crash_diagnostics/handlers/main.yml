@@ -16,3 +16,9 @@
   # update-grub doesn't exist in containers
   when: ansible_virtualization_type != 'docker'
   listen: Update GRUB
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: ansible_service_mgr == 'systemd'
+  listen: Reload systemd

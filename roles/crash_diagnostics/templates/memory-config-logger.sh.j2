@@ -1,0 +1,64 @@
+#!/bin/bash
+# Memory Configuration Logger - captures RAM settings at boot
+# Managed by Ansible - do not edit manually
+
+LOG_DIR="{{ crash_diagnostics_memory_log_dir }}"
+LOG_FILE="$LOG_DIR/memory-config-$(date +%Y-%m-%d_%H%M%S).log"
+
+mkdir -p "$LOG_DIR"
+
+{
+  echo "=== Memory Configuration Logged at $(date -Iseconds) ==="
+  echo "Kernel: $(uname -r)"
+  echo "Boot ID: $(cat /proc/sys/kernel/random/boot_id)"
+  echo ""
+
+  echo "=== DMI Memory Information ==="
+  dmidecode -t memory 2>/dev/null || echo "dmidecode not available"
+  echo ""
+
+  echo "=== DIMM SPD Data (decode-dimms) ==="
+  if command -v decode-dimms &>/dev/null; then
+    # Load i2c modules if not loaded
+    modprobe i2c-dev 2>/dev/null || true
+    modprobe i2c-piix4 2>/dev/null || true
+    modprobe eeprom 2>/dev/null || true
+    sleep 1
+    decode-dimms 2>/dev/null || echo "decode-dimms failed (may need i2c modules)"
+  else
+    echo "decode-dimms not installed"
+  fi
+  echo ""
+
+  echo "=== Current Memory Status ==="
+  free -h
+  echo ""
+
+  echo "=== /proc/meminfo Summary ==="
+  grep -E "^(MemTotal|MemFree|MemAvailable|SwapTotal|SwapFree)" /proc/meminfo
+  echo ""
+
+  echo "=== EDAC Status ==="
+  if [ -d /sys/devices/system/edac/mc ]; then
+    echo "Memory controllers found:"
+    ls -la /sys/devices/system/edac/mc/
+    for mc in /sys/devices/system/edac/mc/mc*; do
+      if [ -d "$mc" ]; then
+        echo "--- $(basename "$mc") ---"
+        cat "$mc/mc_name" 2>/dev/null || echo "name: unknown"
+        echo "CE count: $(cat "$mc/ce_count" 2>/dev/null || echo 0)"
+        echo "UE count: $(cat "$mc/ue_count" 2>/dev/null || echo 0)"
+      fi
+    done
+  else
+    echo "No EDAC memory controllers found"
+  fi
+  echo ""
+
+  echo "=== End of Memory Configuration Log ==="
+} > "$LOG_FILE" 2>&1
+
+# Keep only last {{ crash_diagnostics_memory_log_retention }} logs
+find "$LOG_DIR" -name "memory-config-*.log" -type f | sort -r | tail -n +{{ crash_diagnostics_memory_log_retention + 1 }} | xargs -r rm -f
+
+echo "Memory configuration logged to $LOG_FILE"

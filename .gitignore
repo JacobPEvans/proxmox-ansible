@@ -48,3 +48,6 @@ logs/
 # Temporary files
 tmp/
 *.tmp
+
+# Private documentation (environment-specific, not for git)
+.docs/

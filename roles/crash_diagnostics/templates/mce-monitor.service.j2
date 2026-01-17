@@ -1,0 +1,15 @@
+[Unit]
+Description=Real-time MCE hardware error monitor
+After=rsyslog.service systemd-journald.service
+Wants=rsyslog.service
+
+[Service]
+Type=simple
+ExecStart={{ crash_diagnostics_mce_monitor_script }}
+Restart=always
+RestartSec=5
+StandardOutput=null
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

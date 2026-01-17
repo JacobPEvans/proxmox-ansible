@@ -15,6 +15,37 @@
     - packages
 
 # =============================================================================
+# MCE/EDAC HARDWARE ERROR MONITORING
+# =============================================================================
+
+# NOTE: rasdaemon is also managed by the common role (generic package + service),
+# which runs on all systems. This task provides additional constraint:
+# it re-ensures rasdaemon is started ONLY on physical hardware, not in VMs/containers.
+# The common role's simpler approach is sufficient for most deployments.
+# This can be removed if you prefer the common role as single source of truth.
+
+- name: Check if rasdaemon is available
+  ansible.builtin.stat:
+    path: /usr/sbin/rasdaemon
+  register: crash_diagnostics_rasdaemon_binary
+  tags:
+    - crash_diagnostics
+    - rasdaemon
+
+- name: Enable rasdaemon service for hardware error logging
+  ansible.builtin.systemd:
+    name: rasdaemon
+    enabled: true
+    state: started
+  when:
+    - ansible_service_mgr == 'systemd'
+    - crash_diagnostics_rasdaemon_binary.stat.exists
+    - ansible_virtualization_type == 'NA' or ansible_virtualization_role == 'host'
+  tags:
+    - crash_diagnostics
+    - rasdaemon
+
+# =============================================================================
 # SYSCTL CONFIGURATION
 # =============================================================================
 
@@ -62,3 +93,228 @@
   tags:
     - crash_diagnostics
     - grub
+
+# =============================================================================
+# BOOT-TIME MEMORY LOGGING
+# =============================================================================
+
+- name: Create memory config log directory
+  ansible.builtin.file:
+    path: "{{ crash_diagnostics_memory_log_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - crash_diagnostics
+    - memory_logging
+
+- name: Deploy memory config logger script
+  ansible.builtin.template:
+    src: memory-config-logger.sh.j2
+    dest: "{{ crash_diagnostics_memory_logger_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - crash_diagnostics
+    - memory_logging
+
+- name: Deploy memory config logger systemd service
+  ansible.builtin.template:
+    src: memory-config-logger.service.j2
+    dest: /etc/systemd/system/memory-config-logger.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+  tags:
+    - crash_diagnostics
+    - memory_logging
+
+- name: Enable memory config logger service
+  ansible.builtin.systemd:
+    name: memory-config-logger
+    enabled: true
+    daemon_reload: true
+  when: ansible_service_mgr == 'systemd'
+  tags:
+    - crash_diagnostics
+    - memory_logging
+
+# =============================================================================
+# REAL-TIME MCE MONITORING
+# =============================================================================
+
+- name: Deploy MCE monitor script
+  ansible.builtin.template:
+    src: mce-monitor.sh.j2
+    dest: "{{ crash_diagnostics_mce_monitor_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - crash_diagnostics
+    - mce_monitor
+
+- name: Deploy MCE monitor systemd service
+  ansible.builtin.template:
+    src: mce-monitor.service.j2
+    dest: /etc/systemd/system/mce-monitor.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+  tags:
+    - crash_diagnostics
+    - mce_monitor
+
+- name: Enable and start MCE monitor service
+  ansible.builtin.systemd:
+    name: mce-monitor
+    enabled: true
+    state: started
+    daemon_reload: true
+  # Only on physical hardware with systemd, not in containers/VMs
+  when:
+    - ansible_service_mgr == 'systemd'
+    - ansible_virtualization_type == 'NA' or ansible_virtualization_role == 'host'
+  tags:
+    - crash_diagnostics
+    - mce_monitor
+
+# =============================================================================
+# MEMTEST86+ ON PROXMOX-BOOT-TOOL SYSTEMS (ZFS on root)
+# =============================================================================
+# When Proxmox uses ZFS on root with proxmox-boot-tool, memtest86+ must be
+# installed on the separate FAT32 boot partition, NOT in /boot/ on the ZFS root.
+# The standard memtest86+ package installs to /boot/ which is inaccessible
+# from the boot partition's GRUB configuration.
+
+- name: Check if proxmox-boot-tool manages boot
+  ansible.builtin.stat:
+    path: /etc/kernel/proxmox-boot-uuids
+  register: crash_diagnostics_proxmox_boot_uuids
+  tags:
+    - crash_diagnostics
+    - memtest
+
+- name: Read boot partition UUIDs from proxmox-boot-tool config
+  ansible.builtin.slurp:
+    src: /etc/kernel/proxmox-boot-uuids
+  register: crash_diagnostics_boot_uuids_content
+  when: crash_diagnostics_proxmox_boot_uuids.stat.exists
+  tags:
+    - crash_diagnostics
+    - memtest
+
+- name: Set boot partition UUID fact
+  ansible.builtin.set_fact:
+    crash_diagnostics_boot_partition_uuid: >-
+      {{ (crash_diagnostics_boot_uuids_content.content | b64decode).split('\n') | select | first }}
+  when:
+    - crash_diagnostics_proxmox_boot_uuids.stat.exists
+    - crash_diagnostics_boot_uuids_content.content is defined
+  tags:
+    - crash_diagnostics
+    - memtest
+
+- name: Find boot partition device by UUID
+  ansible.builtin.command:
+    cmd: blkid -U {{ crash_diagnostics_boot_partition_uuid }}
+  register: crash_diagnostics_boot_device
+  changed_when: false
+  when:
+    - crash_diagnostics_boot_partition_uuid is defined
+    - crash_diagnostics_boot_partition_uuid | length > 0
+  tags:
+    - crash_diagnostics
+    - memtest
+
+- name: Create temporary mount point for boot partition
+  ansible.builtin.file:
+    path: /tmp/ansible-boot-partition
+    state: directory
+    mode: "0700"
+  when:
+    - crash_diagnostics_boot_device.stdout is defined
+    - crash_diagnostics_boot_device.stdout | length > 0
+  tags:
+    - crash_diagnostics
+    - memtest
+
+- name: Mount boot partition
+  ansible.posix.mount:
+    path: /tmp/ansible-boot-partition
+    src: "{{ crash_diagnostics_boot_device.stdout }}"
+    fstype: vfat
+    state: mounted
+  when:
+    - crash_diagnostics_boot_device.stdout is defined
+    - crash_diagnostics_boot_device.stdout | length > 0
+  tags:
+    - crash_diagnostics
+    - memtest
+
+- name: Check if memtest86+ binary exists in /boot
+  ansible.builtin.stat:
+    path: /boot/memtest86+x64.bin
+  register: crash_diagnostics_memtest_source
+  when:
+    - crash_diagnostics_boot_device.stdout is defined
+    - crash_diagnostics_boot_device.stdout | length > 0
+  tags:
+    - crash_diagnostics
+    - memtest
+
+- name: Copy memtest86+ to boot partition
+  ansible.builtin.copy:
+    src: /boot/memtest86+x64.bin
+    dest: /tmp/ansible-boot-partition/memtest86+x64.bin
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - crash_diagnostics_memtest_source.stat is defined
+    - crash_diagnostics_memtest_source.stat.exists
+  tags:
+    - crash_diagnostics
+    - memtest
+
+- name: Deploy custom GRUB config with memtest entry to boot partition
+  ansible.builtin.template:
+    src: memtest-custom.cfg.j2
+    dest: /tmp/ansible-boot-partition/grub/custom.cfg
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - crash_diagnostics_boot_partition_uuid is defined
+    - crash_diagnostics_memtest_source.stat is defined
+    - crash_diagnostics_memtest_source.stat.exists
+  tags:
+    - crash_diagnostics
+    - memtest
+
+- name: Unmount boot partition
+  ansible.posix.mount:
+    path: /tmp/ansible-boot-partition
+    state: unmounted
+  when:
+    - crash_diagnostics_boot_device.stdout is defined
+    - crash_diagnostics_boot_device.stdout | length > 0
+  tags:
+    - crash_diagnostics
+    - memtest
+
+- name: Remove temporary mount point
+  ansible.builtin.file:
+    path: /tmp/ansible-boot-partition
+    state: absent
+  when:
+    - crash_diagnostics_boot_device.stdout is defined
+    - crash_diagnostics_boot_device.stdout | length > 0
+  tags:
+    - crash_diagnostics
+    - memtest

@@ -1,0 +1,34 @@
+#!/bin/bash
+# Real-time MCE Monitor - watches for hardware errors
+# Managed by Ansible - do not edit manually
+
+LOG_FILE="{{ crash_diagnostics_mce_log_file }}"
+
+echo "MCE Monitor started at $(date -Iseconds)" >> "$LOG_FILE"
+
+# Follow journal for MCE events in real-time
+journalctl -f -k --no-pager 2>/dev/null | while read -r line; do
+  if echo "$line" | grep -qiE "mce|machine check|hardware error|edac"; then
+    timestamp=$(date -Iseconds)
+    echo "[$timestamp] $line" >> "$LOG_FILE"
+
+    # Also log to syslog for centralized collection
+    logger -t mce-monitor -p daemon.warning "Hardware error detected: $line"
+
+    # Capture additional context on MCE detection
+    {
+      echo "=== MCE Context Dump at $timestamp ==="
+      echo "--- EDAC Counters ---"
+      for mc in /sys/devices/system/edac/mc/mc*; do
+        if [ -d "$mc" ]; then
+          echo "$(basename "$mc"): CE=$(cat "$mc/ce_count" 2>/dev/null) UE=$(cat "$mc/ue_count" 2>/dev/null)"
+        fi
+      done
+      echo "--- Memory Pressure ---"
+      free -m
+      echo "--- Load ---"
+      uptime
+      echo "=== End Context ==="
+    } >> "$LOG_FILE"
+  fi
+done
