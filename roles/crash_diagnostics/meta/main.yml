@@ -3,7 +3,7 @@
 
 galaxy_info:
   role_name: crash_diagnostics
-  author: proxmox-ansible
+  author: ansible-proxmox
   description: Configure kernel crash diagnostics (kdump, panic settings)
   license: MIT
   min_ansible_version: "2.15"
