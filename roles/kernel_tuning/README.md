@@ -122,4 +122,4 @@ With boot parameters enabled for AMD Zen1:
 
 ## License
 
-Part of proxmox-ansible project
+Part of ansible-proxmox project
