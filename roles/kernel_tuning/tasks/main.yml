@@ -69,6 +69,20 @@
         msg: "Could not detect Proxmox boot method from 'proxmox-boot-tool status'; skipping boot parameter configuration."
       when: kernel_tuning_boot_method == 'unknown'
 
+    - name: Define managed kernel parameters
+      ansible.builtin.set_fact:
+        _kernel_tuning_managed_params:
+          - clocksource
+          - tsc
+          - nmi_watchdog
+          - softlockup_panic
+          - hung_task_panic
+          - mce
+          - edac_report
+          - processor.max_cstate
+          - nosmt
+      when: kernel_tuning_boot_method != 'unknown'
+
     - name: Build stability parameters string
       ansible.builtin.set_fact:
         kernel_tuning_stability_params: >-
@@ -79,7 +93,8 @@
                'hung_task_panic=' ~ kernel_tuning_hung_task_panic | string,
                'mce=' ~ kernel_tuning_mce_level | string,
                'edac_report=' ~ kernel_tuning_edac_report | string]
-              + (['nosmt'] if (kernel_tuning_disable_smt | default(false) | bool) else []))
+              + (['nosmt'] if kernel_tuning_disable_smt | default(false) | bool else [])
+              + (['processor.max_cstate=1'] if kernel_tuning_disable_deep_cstates | default(false) | bool else []))
              | join(' ')) }}
       when: kernel_tuning_boot_method != 'unknown'
 
@@ -136,8 +151,7 @@
           ansible.builtin.set_fact:
             kernel_tuning_base_params: >-
               {{ (kernel_tuning_current_cmdline.content | b64decode | trim).split()
-                 | reject('match', '^(nmi_watchdog|softlockup_panic|hung_task_panic|mce|edac_report|clocksource|tsc)(=.*)?$')
-                 | reject('match', '^nosmt$')
+                 | reject('match', '^(' ~ (_kernel_tuning_managed_params | map('regex_escape') | join('|')) ~ ')(=.*)?$')
                  | list
                  | join(' ') }}
           when: kernel_tuning_cmdline_stat.stat.exists

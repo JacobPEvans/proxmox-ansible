@@ -14,13 +14,14 @@ kernel_tuning_dirty_background_ratio: 5
 kernel_tuning_overcommit_memory: 0
 
 # Kernel Tuning - Boot Parameters (AMD Zen1 stability)
-# NOTE: kernel_tuning_boot_params_enabled is set to false by default to avoid conflict with
-# crash_diagnostics role, which also manages boot parameters like nmi_watchdog, softlockup_panic,
-# and hung_task_panic. Enable this only if you are NOT using crash_diagnostics for boot params.
-kernel_tuning_boot_params_enabled: false
+# NOTE: This role manages boot params via /etc/kernel/cmdline (UEFI) or GRUB (BIOS).
+# The crash_diagnostics role ALSO manages GRUB params - they will be merged, not conflict.
+# For UEFI systems, only kernel_tuning manages /etc/kernel/cmdline.
+kernel_tuning_boot_params_enabled: true
 kernel_tuning_clocksource: hpet
 kernel_tuning_tsc_mode: unstable
 kernel_tuning_disable_smt: true
+kernel_tuning_disable_deep_cstates: true
 
 # Ulimits Configuration
 ulimits_nofile: 65536

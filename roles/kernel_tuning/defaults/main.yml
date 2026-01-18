@@ -33,6 +33,11 @@ kernel_tuning_tsc_mode: unstable
 # Set to true to add 'nosmt' parameter (workaround for rare arithmetic/lockup issues)
 kernel_tuning_disable_smt: false
 
+# Disable deep C-states for improved stability on some AMD systems
+# Set to true to add 'processor.max_cstate=1' parameter
+# This prevents the CPU from entering deep sleep states (C2+) which can cause freeze issues
+kernel_tuning_disable_deep_cstates: false
+
 # Watchdog and panic parameters (crash diagnostics)
 kernel_tuning_nmi_watchdog: 1
 kernel_tuning_softlockup_panic: 1
