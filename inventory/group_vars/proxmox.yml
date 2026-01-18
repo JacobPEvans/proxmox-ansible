@@ -21,7 +21,7 @@ kernel_tuning_boot_params_enabled: true
 kernel_tuning_clocksource: hpet
 kernel_tuning_tsc_mode: unstable
 kernel_tuning_disable_smt: true
-kernel_tuning_disable_deep_cstates: true  # Added Jan 17 to test C-state freeze hypothesis
+kernel_tuning_disable_deep_cstates: true
 
 # Ulimits Configuration
 ulimits_nofile: 65536
