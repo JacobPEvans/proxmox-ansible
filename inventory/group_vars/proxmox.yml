@@ -20,7 +20,8 @@ kernel_tuning_overcommit_memory: 0
 kernel_tuning_boot_params_enabled: true
 kernel_tuning_clocksource: hpet
 kernel_tuning_tsc_mode: unstable
-kernel_tuning_disable_smt: true
+# SMT re-enabled after RAM upgrade to 32GB - monitor for stability
+kernel_tuning_disable_smt: false
 kernel_tuning_disable_deep_cstates: true
 
 # Ulimits Configuration
