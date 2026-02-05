@@ -4,7 +4,13 @@
 
 set -euo pipefail
 
-NIX_SHELL="${NIX_SHELL:-$HOME/git/nix-config/main/shells/infrastructure-automation}"
+NIX_SHELL="${NIX_SHELL:-}"
+
+if [[ -z "$NIX_SHELL" ]]; then
+    echo "ERROR: NIX_SHELL environment variable must be set"
+    echo "Example: export NIX_SHELL=~/git/nix-config/main/shells/infrastructure-automation"
+    exit 1
+fi
 
 usage() {
     echo "Usage: $0 <playbook> [ansible-playbook args...]"
