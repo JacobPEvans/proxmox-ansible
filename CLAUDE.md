@@ -26,25 +26,30 @@ Firewall rules for pipeline ports (1514-1518, 8088,
 | Variable | Purpose |
 | --- | --- |
 | `PROXMOX_VE_HOSTNAME` | Proxmox VE hostname |
-| `PROXMOX_SSH_KEY_PATH` | SSH key path |
-| `PROXMOX_VE_GATEWAY` | Network gateway |
-| `PROXMOX_DOMAIN` | Internal DNS domain |
+| `PROXMOX_VM_SSH_USERNAME` | SSH user for Proxmox host |
+| `PROXMOX_SSH_PRIVATE_KEY` | SSH private key (used by scripts/run-ansible.sh) |
 | `HEALTHCHECK_PING_KEY` | Healthchecks.io key |
+
+`scripts/run-ansible.sh` writes `PROXMOX_SSH_PRIVATE_KEY` to a temp file
+and exports `ANSIBLE_PRIVATE_KEY_FILE` pointing to it.
 
 ## Commands
 
 ```bash
-# Run full playbook
-doppler run -- pipx run ansible-playbook \
+# Via run script (handles SSH key from env)
+doppler run -- ./scripts/run-ansible.sh playbooks/site.yml
+
+# Or via uv directly
+doppler run -- uv run ansible-playbook \
   -i inventory/hosts.yml playbooks/site.yml
 
 # Dry run
-doppler run -- pipx run ansible-playbook \
+doppler run -- uv run ansible-playbook \
   -i inventory/hosts.yml playbooks/site.yml \
   --check --diff
 
 # Lint
-pipx run ansible-lint
+uv run ansible-lint
 ```
 
 ## Related Repositories
