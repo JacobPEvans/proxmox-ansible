@@ -51,3 +51,6 @@ tmp/
 
 # Private documentation (environment-specific, not for git)
 .docs/
+
+# Nix/direnv
+.direnv/
