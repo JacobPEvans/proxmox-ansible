@@ -1,0 +1,9 @@
+---
+# LXC container feature configuration
+# Maps container IDs to their desired feature strings (pct set --features format)
+#
+# Example:
+#   lxc_features_containers:
+#     "110": "nesting=1,keyctl=1,fuse=1"
+#     "111": "nesting=1,keyctl=1,fuse=1"
+lxc_features_containers: {}

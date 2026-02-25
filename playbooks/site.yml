@@ -34,3 +34,7 @@
     - role: crash_diagnostics
       tags:
         - crash_diagnostics
+
+    - role: lxc_features
+      tags:
+        - lxc_features

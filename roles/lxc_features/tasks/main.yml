@@ -1,0 +1,11 @@
+---
+# Configure LXC container features on Proxmox VE host
+# Uses pct set to apply feature flags (nesting, keyctl, fuse, etc.)
+# Requires stopping the container, so will briefly interrupt service.
+
+- name: Configure LXC container features
+  ansible.builtin.include_tasks: configure_container.yml
+  loop: "{{ lxc_features_containers | dict2items }}"
+  loop_control:
+    label: "Container {{ item.key }}: {{ item.value }}"
+  when: lxc_features_containers | length > 0

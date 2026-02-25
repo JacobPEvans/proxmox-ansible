@@ -1,0 +1,39 @@
+---
+# Configure features for a single LXC container
+# item.key = container ID (string), item.value = desired features string
+
+- name: "Get current features for container {{ item.key }}"
+  ansible.builtin.command: "pct config {{ item.key }}"
+  register: lxc_features_pct_config
+  changed_when: false
+
+- name: "Parse current features for container {{ item.key }}"
+  ansible.builtin.set_fact:
+    lxc_features_current: >-
+      {{
+        lxc_features_pct_config.stdout_lines
+        | select('match', '^features:')
+        | map('regex_replace', '^features:\s*', '')
+        | list
+        | first
+        | default('')
+      }}
+
+- name: "Apply features to container {{ item.key }}"
+  when: lxc_features_current != item.value
+  block:
+    - name: Stop container to apply feature changes  # {{ item.key }}
+      ansible.builtin.command: "pct stop {{ item.key }}"
+      register: lxc_features_stop_result
+      failed_when:
+        - lxc_features_stop_result.rc != 0
+        - "'already stopped' not in lxc_features_stop_result.stderr"
+      changed_when: lxc_features_stop_result.rc == 0
+
+    - name: "Set features on container {{ item.key }}"
+      ansible.builtin.command: "pct set {{ item.key }} --features {{ item.value }}"
+      changed_when: true
+
+    - name: "Start container {{ item.key }}"
+      ansible.builtin.command: "pct start {{ item.key }}"
+      changed_when: true
