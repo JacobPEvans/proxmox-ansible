@@ -40,12 +40,15 @@ ansible-playbook -i inventory/hosts.yml playbooks/site.yml
 
 ## What Gets Configured
 
-| Component           | What It Does                       |
-| ------------------- | ---------------------------------- |
-| **Common Packages** | Installs htop, iotop, monitoring   |
-| **ZFS Swap**        | Creates optimized swap on ZFS      |
-| **Kernel Tuning**   | Optimizes memory and disk settings |
-| **System Limits**   | Increases file and process limits  |
+| Component               | What It Does                                    |
+| ----------------------- | ----------------------------------------------- |
+| **Common Packages**     | Installs htop, iotop, monitoring                |
+| **ZFS Swap**            | Creates optimized swap on ZFS                   |
+| **Kernel Tuning**       | Optimizes memory and disk settings              |
+| **System Limits**       | Increases file and process limits               |
+| **Crash Diagnostics**   | System crash diagnostics configuration          |
+| **LXC Features**        | LXC container feature flags (fuse, nesting)     |
+| **Proxmox Monitoring**  | Proxmox host monitoring setup                   |
 
 ### Why Each Matters
 
