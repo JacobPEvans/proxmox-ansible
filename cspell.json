@@ -2,8 +2,10 @@
   "version": "0.2",
   "language": "en",
   "words": [
+    "atop",
     "iotop",
     "nofile",
+    "sysstat",
     "ulimits"
   ]
 }
