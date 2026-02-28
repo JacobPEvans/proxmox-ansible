@@ -1,24 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "local>JacobPEvans/.github:renovate-presets"
   ],
   "packageRules": [
-    {
-      "description": "Auto-merge official GitHub Actions (including major versions)",
-      "matchDatasources": ["github-actions"],
-      "matchPackagePrefixes": ["actions/"],
-      "automerge": true,
-      "automergeType": "squash",
-      "minimumReleaseAge": null
-    },
-    {
-      "description": "Auto-merge pre-commit hooks minor and patch updates",
-      "matchManagers": ["pre-commit"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true,
-      "automergeType": "squash"
-    },
     {
       "description": "Group Ansible collection updates",
       "matchManagers": ["ansible-galaxy"],
