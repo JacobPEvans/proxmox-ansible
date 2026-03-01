@@ -81,7 +81,7 @@
                 echo "  - age: $(age --version 2>/dev/null)"
                 echo ""
                 echo "Getting Started:"
-                echo "  1. Install collections: ansible-galaxy install -r requirements.yml"
+                echo "  1. Install collections: ansible-galaxy collection install -r requirements.yml"
                 echo "  2. Setup pre-commit: pre-commit install"
                 echo "  3. Run playbook: ansible-playbook -i inventory/hosts.yml playbooks/site.yml"
                 echo ""

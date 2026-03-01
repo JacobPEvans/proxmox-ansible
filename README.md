@@ -123,12 +123,12 @@ Requires [Nix](https://nixos.org/download/) with flakes enabled and
 [direnv](https://direnv.net/docs/installation.html) with [nix-direnv](https://github.com/nix-community/nix-direnv).
 
 ```sh
-cd ansible-proxmox/main    # or any worktree
-direnv allow               # one-time per worktree
+cd ~/git/ansible-proxmox/main    # or any worktree
+direnv allow                     # one-time per worktree
 ```
 
 Tools provided: `ansible`, `ansible-lint`, `molecule`, `sops`, `age`,
-`python3` (with paramiko, pyyaml, jinja2), `jq`, `yq`, `pre-commit`.
+`python3` (with paramiko, jsondiff, pyyaml, jinja2), `jq`, `yq`, `pre-commit`.
 
 ## Testing
 
