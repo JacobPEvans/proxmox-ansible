@@ -2,8 +2,11 @@
   "version": "0.2",
   "language": "en",
   "words": [
+    "agentic",
     "atop",
+    "backdoors",
     "direnv",
+    "exfiltration",
     "healthcheck",
     "healthchecks",
     "hugepages",
@@ -13,8 +16,13 @@
     "nofile",
     "paramiko",
     "pyyaml",
+    "redirs",
     "sysstat",
+    "tinyurl",
+    "toolsets",
     "ulimits",
+    "unshallow",
+    "unsanitized",
     "worktree"
   ]
 }
