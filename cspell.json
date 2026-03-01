@@ -3,9 +3,16 @@
   "language": "en",
   "words": [
     "atop",
+    "direnv",
+    "healthchecks",
+    "hugepages",
     "iotop",
+    "jsondiff",
     "nofile",
+    "paramiko",
+    "pyyaml",
     "sysstat",
-    "ulimits"
+    "ulimits",
+    "worktree"
   ]
 }

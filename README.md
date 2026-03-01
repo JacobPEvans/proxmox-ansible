@@ -115,6 +115,21 @@ kernel_tuning_swappiness: 10
 ulimits_nofile: 65536
 ```
 
+## Development Environment
+
+This project uses [Nix flakes](https://wiki.nixos.org/wiki/Flakes) + [direnv](https://direnv.net/) for a reproducible dev environment.
+
+Requires [Nix](https://nixos.org/download/) with flakes enabled and
+[direnv](https://direnv.net/docs/installation.html) with [nix-direnv](https://github.com/nix-community/nix-direnv).
+
+```sh
+cd ansible-proxmox/main    # or any worktree
+direnv allow               # one-time per worktree
+```
+
+Tools provided: `ansible`, `ansible-lint`, `molecule`, `sops`, `age`,
+`python3` (with paramiko, pyyaml, jinja2), `jq`, `yq`, `pre-commit`.
+
 ## Testing
 
 This project includes automated tests using [Molecule][molecule]:
