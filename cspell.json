@@ -1,7 +1,7 @@
 {
   "version": "0.2",
   "language": "en",
-  "words": ["agentic", "backdoors", "Exfiltration", "exfiltration", "toolsets", "tinyurl", "unshallow", "unsanitized",
+  "words": [
     "agentic",
     "atop",
     "backdoors",
@@ -14,6 +14,7 @@
     "nofile",
     "paramiko",
     "pyyaml",
+    "redirs",
     "sysstat",
     "tinyurl",
     "toolsets",

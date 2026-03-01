@@ -1,8 +1,11 @@
 ---
 description: Daily automated link checker that finds and fixes broken links in documentation files
+engine: copilot
 on:
   schedule: daily on weekdays
-permissions: read-all
+permissions:
+  contents: write
+  pull-requests: write
 timeout-minutes: 60
 network:
   allowed:
@@ -71,8 +74,14 @@ steps:
           continue
         fi
 
-        # Test the link with curl
-        HTTP_CODE=$(curl -L -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || echo "000")
+        # SSRF protection: skip private/internal IP ranges and localhost
+        if echo "$url" | grep -qE 'https?://(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|::1|0\.0\.0\.0)'; then
+          echo "SKIP (private/internal) $url" >> /tmp/link-check-results.md
+          continue
+        fi
+
+        # Test the link with curl (no redirects to prevent SSRF via open redirects)
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 --max-redirs 3 --proto '=https,http' "$url" 2>/dev/null || echo "000")
 
         if [[ "$HTTP_CODE" =~ ^2 ]] || [[ "$HTTP_CODE" =~ ^3 ]]; then
           WORKING_COUNT=$((WORKING_COUNT + 1))

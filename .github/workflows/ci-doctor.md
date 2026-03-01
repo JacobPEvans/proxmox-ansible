@@ -17,7 +17,11 @@ on:
 # Only trigger for failures - check in the workflow body
 if: ${{ github.event.workflow_run.conclusion == 'failure' }}
 
-permissions: read-all
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  actions: read
 
 network: defaults
 
@@ -28,6 +32,8 @@ safe-outputs:
   add-comment:
 
 tools:
+  github:
+    toolsets: [default]
   cache-memory: true
   web-fetch:
 
@@ -122,7 +128,7 @@ Your goal is to conduct a deep investigation when the CI workflow fails.
     - If you find a duplicate issue, add a comment with your findings and close the investigation.
     - Do NOT open a new issue since you found a duplicate already (skip next phases).
 
-### Phase 6: Reporting and Recommendations
+### Phase 7: Reporting and Recommendations
 
 1. **Create Investigation Report**: Generate a comprehensive analysis including:
    - **Executive Summary**: Quick overview of the failure
