@@ -4,10 +4,12 @@
   "words": [
     "atop",
     "direnv",
+    "healthcheck",
     "healthchecks",
     "hugepages",
     "iotop",
     "jsondiff",
+    "mgmt",
     "nofile",
     "paramiko",
     "pyyaml",
